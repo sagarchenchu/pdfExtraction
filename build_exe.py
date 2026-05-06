@@ -34,7 +34,7 @@ def main() -> None:
     spec_file = os.path.join(ROOT, "pdf_extractor.spec")
     run([sys.executable, "-m", "PyInstaller", spec_file, "--clean"])
 
-    print("\n✅  Build finished. Executable is in the dist/ folder.\n")
+    print("\nBuild finished. Executable is in the dist/ folder.\n")
 
 
 if __name__ == "__main__":
