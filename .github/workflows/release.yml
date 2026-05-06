@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build exe & publish release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies & build executable
+        run: python build_exe.py
+
+      - name: Verify executable was produced
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist\PDFTableExtractor.exe")) {
+            Write-Error "Build failed: dist\PDFTableExtractor.exe not found."
+            exit 1
+          }
+
+      - name: Rename executable with version tag
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"
+          Rename-Item -Path "dist\PDFTableExtractor.exe" `
+                      -NewName "PDFTableExtractor-$version.exe"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: PDF Table Extractor ${{ github.ref_name }}
+          generate_release_notes: true
+          files: dist/PDFTableExtractor-${{ github.ref_name }}.exe
