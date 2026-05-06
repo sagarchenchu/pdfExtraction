@@ -1,9 +1,9 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  pull_request:
+    types: [closed]
+    branches: [main]
 
 permissions:
   contents: write
@@ -11,11 +11,30 @@ permissions:
 jobs:
   build-and-release:
     name: Build exe & publish release
+    if: github.event.pull_request.merged == true
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version tag
+        id: version
+        shell: pwsh
+        run: |
+          $date = Get-Date -Format "yyyy.MM.dd"
+          $version = "v$date.${{ github.run_number }}"
+          echo "tag=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Create and push git tag
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f ${{ steps.version.outputs.tag }}
+          git push origin ${{ steps.version.outputs.tag }} --force
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -36,14 +55,14 @@ jobs:
       - name: Rename executable with version tag
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}"
+          $version = "${{ steps.version.outputs.tag }}"
           Rename-Item -Path "dist\PDFTableExtractor.exe" `
                       -NewName "PDFTableExtractor-$version.exe"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: PDF Table Extractor ${{ github.ref_name }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: PDF Table Extractor ${{ steps.version.outputs.tag }}
           generate_release_notes: true
-          files: dist/PDFTableExtractor-${{ github.ref_name }}.exe
+          files: dist/PDFTableExtractor-${{ steps.version.outputs.tag }}.exe
