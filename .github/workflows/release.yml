@@ -22,7 +22,11 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          $latestTag = git tag --list "v[0-9]*.[0-9]*.[0-9]*" --sort=-v:refname | Select-Object -First 1
+          $latestTag = git tag --list |
+            Where-Object { $_ -match '^v\d+\.\d+\.\d+$' } |
+            Sort-Object { [version]($_ -replace '^v', '') } -Descending |
+            Select-Object -First 1
+
           if ($latestTag -match '^v(\d+)\.(\d+)\.(\d+)$') {
             $major = [int]$Matches[1]
             $minor = [int]$Matches[2]
@@ -32,7 +36,13 @@ jobs:
             $minor = 0
             $patch = 1
           }
-          $version = "v$major.$minor.$patch"
+
+          do {
+            $version = "v$major.$minor.$patch"
+            $exists = git tag --list $version
+            if ($exists) { $patch += 1 }
+          } while ($exists)
+
           "tag=$version" >> $env:GITHUB_OUTPUT
 
       - name: Create and push git tag
