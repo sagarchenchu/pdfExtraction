@@ -66,14 +66,14 @@ def _extract_page(pdf_path: str, page_index: int):
 def _write_excel(results: list, output_path: str) -> None:
     """Write extracted data to an Excel workbook."""
     wb = openpyxl.Workbook()
-    wb.remove(wb.active)  # remove default blank sheet
+    ws = wb.active
+    ws.title = "Extraction"
+    row_cursor = 1
 
     for result in results:
         page_num = result["page_num"]
-        sheet_name = f"Page {page_num}"
-        ws = wb.create_sheet(title=sheet_name)
-
-        row_cursor = 1
+        ws.cell(row=row_cursor, column=1, value=f"Page {page_num}")
+        row_cursor += 1
 
         if result["tables"]:
             for table_idx, table in enumerate(result["tables"], start=1):
@@ -91,6 +91,7 @@ def _write_excel(results: list, output_path: str) -> None:
             for line in result["text"].splitlines():
                 ws.cell(row=row_cursor, column=1, value=line)
                 row_cursor += 1
+        row_cursor += 1  # blank row between pages
 
     wb.save(output_path)
 
