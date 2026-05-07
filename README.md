@@ -11,6 +11,7 @@ A standalone GUI application for extracting table data and text from PDF files a
 | Upload any PDF | Browse to select a `.pdf` file |
 | Choose page range | Pick the exact "from" and "to" page numbers |
 | Three output formats | Excel (`.xlsx`), Word (`.docx`), or plain text (`.txt`) |
+| Single-sheet Excel export | Selected PDF pages are combined into one worksheet |
 | Progress bar | Shows per-page progress during extraction |
 | Parallel processing | Up to 4 worker threads extract pages simultaneously |
 | Same-folder output | The output file is saved next to the original PDF |
