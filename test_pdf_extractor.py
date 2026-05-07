@@ -97,27 +97,31 @@ class TestWriteExcel(unittest.TestCase):
         app._write_excel([PAGE_WITH_TABLE], path)
         self.assertTrue(os.path.exists(path))
 
-    def test_sheet_names_match_pages(self):
+    def test_excel_uses_one_sheet_for_all_pages(self):
         path = self._out("test_excel_sheets.xlsx")
         app._write_excel([PAGE_WITH_TABLE, PAGE_TEXT_ONLY], path)
         wb = openpyxl.load_workbook(path)
-        self.assertIn("Page 2", wb.sheetnames)
-        self.assertIn("Page 3", wb.sheetnames)
+        self.assertEqual(wb.sheetnames, ["Extraction"])
+        ws = wb["Extraction"]
+        cell_values = [cell.value for row in ws.iter_rows() for cell in row if cell.value]
+        self.assertIn("Page 2", cell_values)
+        self.assertIn("Page 3", cell_values)
 
     def test_table_data_written_correctly(self):
         path = self._out("test_excel_data.xlsx")
         app._write_excel([PAGE_WITH_TABLE], path)
         wb = openpyxl.load_workbook(path)
-        ws = wb["Page 2"]
-        self.assertEqual(ws.cell(1, 1).value, "Name")
-        self.assertEqual(ws.cell(2, 1).value, "Alice")
-        self.assertEqual(ws.cell(3, 2).value, "25")
+        ws = wb["Extraction"]
+        self.assertEqual(ws.cell(1, 1).value, "Page 2")
+        self.assertEqual(ws.cell(2, 1).value, "Name")
+        self.assertEqual(ws.cell(3, 1).value, "Alice")
+        self.assertEqual(ws.cell(4, 2).value, "25")
 
     def test_text_fallback_when_no_table(self):
         path = self._out("test_excel_text_fallback.xlsx")
         app._write_excel([PAGE_TEXT_ONLY], path)
         wb = openpyxl.load_workbook(path)
-        ws = wb["Page 3"]
+        ws = wb["Extraction"]
         cell_values = [ws.cell(r, 1).value for r in range(1, ws.max_row + 1)]
         self.assertIn("Some plain text on page 3.", cell_values)
 
@@ -125,7 +129,7 @@ class TestWriteExcel(unittest.TestCase):
         path = self._out("test_excel_multi_table.xlsx")
         app._write_excel([PAGE_MULTI_TABLE], path)
         wb = openpyxl.load_workbook(path)
-        ws = wb["Page 4"]
+        ws = wb["Extraction"]
         # Both tables must appear – verify some cells exist
         all_values = set()
         for row in ws.iter_rows(values_only=True):
